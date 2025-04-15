@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Itinerary, generateItinerary, saveItinerary, getItineraries, deleteItinerary } from '@/utils/itineraryUtils';
+import { Itinerary, generateItinerary, saveItinerary, getItineraries, deleteItinerary, ItineraryActivity } from '@/utils/itineraryUtils';
 import { MapPin, Calendar, Users, DollarSign, Edit, Trash2 } from 'lucide-react';
 
 const Planner = () => {
@@ -261,16 +261,24 @@ const Planner = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {generatedItinerary.activities
-                    .sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
-                    .reduce((acc: { [key: number]: typeof generatedItinerary.activities }, activity) => {
-                      if (!acc[activity.day]) {
-                        acc[activity.day] = [];
+                  {(() => {
+                    // First, group activities by day
+                    const activitiesByDay: Record<number, ItineraryActivity[]> = {};
+                    
+                    // Sort activities by day and time
+                    const sortedActivities = [...generatedItinerary.activities]
+                      .sort((a, b) => a.day - b.day || a.time.localeCompare(b.time));
+                    
+                    // Group them by day
+                    sortedActivities.forEach(activity => {
+                      if (!activitiesByDay[activity.day]) {
+                        activitiesByDay[activity.day] = [];
                       }
-                      acc[activity.day].push(activity);
-                      return acc;
-                    }, {})
-                    .map((activities: typeof generatedItinerary.activities, day: number) => (
+                      activitiesByDay[activity.day].push(activity);
+                    });
+                    
+                    // Convert the object to an array of [day, activities] entries for rendering
+                    return Object.entries(activitiesByDay).map(([day, activities]) => (
                       <div key={day} className="border-t pt-4 first:border-t-0 first:pt-0">
                         <h3 className="font-bold text-lg mb-4">Day {day}</h3>
                         <ul className="space-y-4">
@@ -290,7 +298,8 @@ const Planner = () => {
                           ))}
                         </ul>
                       </div>
-                    ))}
+                    ));
+                  })()}
                 </div>
               </CardContent>
               <CardFooter>
