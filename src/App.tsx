@@ -43,7 +43,11 @@ const App = () => (
                   <Profile />
                 </ProtectedRoute>
               } />
-              <Route path="/chatbot" element={<Chatbot />} />
+              <Route path="/chatbot" element={
+                <ProtectedRoute>
+                  <Chatbot />
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

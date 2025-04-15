@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initializeAuth = async () => {
       setIsLoading(true);
       
-      // Set up auth state listener
+      // Set up auth state listener first
       const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
         console.log('Auth state changed:', event);
         setSession(newSession);
@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAuthenticated(!!newSession?.user);
       });
       
-      // Get initial session
+      // Then check for existing session
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
       
@@ -79,7 +79,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       
       return () => {
-        authListener.subscription.unsubscribe();
+        if (authListener && authListener.subscription) {
+          authListener.subscription.unsubscribe();
+        }
       };
     };
     

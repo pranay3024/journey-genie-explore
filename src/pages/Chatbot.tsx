@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Send, CornerDownLeft, Bot, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatRupees } from '@/utils/itineraryUtils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
   id: string;
@@ -29,6 +30,7 @@ const Chatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     scrollToBottom();
@@ -128,6 +130,28 @@ const Chatbot = () => {
 
     return formattedContent;
   };
+
+  // Add authentication check
+  if (!isAuthenticated) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card className="w-full max-w-4xl mx-auto">
+          <CardHeader>
+            <CardTitle>Travel Assistant</CardTitle>
+            <CardDescription>
+              Please log in to use the travel assistant
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center py-10">
+            <p className="mb-4 text-center">You need to be logged in to use this feature.</p>
+            <Button asChild>
+              <a href="/login">Log in</a>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">

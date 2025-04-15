@@ -34,6 +34,9 @@ export const updateUserProfile = async (
       }
     }
 
+    // Note: Location is static and is not actually stored in Supabase
+    // It's retrieved via getUserLocation function
+    
     console.log("User profile updated successfully");
     return true;
   } catch (error) {
@@ -43,8 +46,31 @@ export const updateUserProfile = async (
 };
 
 /**
- * Gets the user's location (currently returns static value)
+ * Gets the user's location (static value for Chembur, Mumbai)
  */
 export const getUserLocation = (): string => {
   return "Chembur, Mumbai";
+};
+
+/**
+ * Fetches the user's profile from Supabase
+ */
+export const fetchUserProfile = async (userId: string) => {
+  try {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error("Error fetching user data:", userError);
+      return null;
+    }
+    
+    // Return user data with location
+    return {
+      ...userData.user,
+      location: getUserLocation(),
+    };
+  } catch (error) {
+    console.error("Error in fetchUserProfile:", error);
+    return null;
+  }
 };
