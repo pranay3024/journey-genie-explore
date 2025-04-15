@@ -1,466 +1,316 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, Trash2, Check, ShoppingCart, Package } from 'lucide-react';
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Slider } from '@/components/ui/slider';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Plane, Building2, Compass, Clock, Star } from 'lucide-react';
-
-type BookingItem = {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-  price: number;
-  rating: number;
-  duration?: string;
-  location: string;
-  category: 'flight' | 'hotel' | 'activity';
-};
-
-const bookings: BookingItem[] = [
-  // Flights
-  {
-    id: 'f1',
-    title: 'New York to Paris',
-    description: 'Direct flight with Air France',
-    image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074',
-    price: 489,
-    rating: 4.2,
-    duration: '7h 30m',
-    location: 'JFK → CDG',
-    category: 'flight'
-  },
-  {
-    id: 'f2',
-    title: 'London to Tokyo',
-    description: 'One stop in Dubai with Emirates',
-    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=2071',
-    price: 723,
-    rating: 4.5,
-    duration: '14h 15m',
-    location: 'LHR → NRT',
-    category: 'flight'
-  },
-  {
-    id: 'f3',
-    title: 'Los Angeles to Rome',
-    description: 'Direct flight with Alitalia',
-    image: 'https://images.unsplash.com/photo-1544006659-f0b21884ce1d?q=80&w=2070',
-    price: 682,
-    rating: 4.1,
-    duration: '12h 45m',
-    location: 'LAX → FCO',
-    category: 'flight'
-  },
-  
-  // Hotels
-  {
-    id: 'h1',
-    title: 'Grand Plaza Hotel',
-    description: 'Luxury 5-star hotel with pool and spa',
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070',
-    price: 199,
-    rating: 4.8,
-    location: 'Paris, France',
-    category: 'hotel'
-  },
-  {
-    id: 'h2',
-    title: 'Sakura Ryokan',
-    description: 'Traditional Japanese inn with hot springs',
-    image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2070',
-    price: 145,
-    rating: 4.6,
-    location: 'Kyoto, Japan',
-    category: 'hotel'
-  },
-  {
-    id: 'h3',
-    title: 'Colosseum View Suites',
-    description: 'Boutique hotel with panoramic views',
-    image: 'https://images.unsplash.com/photo-1629140727571-9b5c6f6267b4?q=80&w=2070',
-    price: 232,
-    rating: 4.7,
-    location: 'Rome, Italy',
-    category: 'hotel'
-  },
-  
-  // Activities
-  {
-    id: 'a1',
-    title: 'Louvre Museum Tour',
-    description: 'Skip-the-line guided tour of famous artworks',
-    image: 'https://images.unsplash.com/photo-1505159940484-eb2b9f2588e2?q=80&w=2022',
-    price: 65,
-    rating: 4.9,
-    duration: '3h',
-    location: 'Paris, France',
-    category: 'activity'
-  },
-  {
-    id: 'a2',
-    title: 'Mount Fuji Day Trip',
-    description: 'Full-day excursion with lunch included',
-    image: 'https://images.unsplash.com/photo-1570459027562-4a916cc6368f?q=80&w=2070',
-    price: 120,
-    rating: 4.7,
-    duration: '10h',
-    location: 'Tokyo, Japan',
-    category: 'activity'
-  },
-  {
-    id: 'a3',
-    title: 'Vatican & Sistine Chapel',
-    description: 'Private tour with expert art historian',
-    image: 'https://images.unsplash.com/photo-1622122201714-77da0ca8e5d4?q=80&w=2001',
-    price: 89,
-    rating: 4.8,
-    duration: '4h',
-    location: 'Rome, Italy',
-    category: 'activity'
-  }
-];
+  BookingItem, getCartItems, getBookings, 
+  confirmBooking, removeFromCart, formatRupees 
+} from '@/utils/itineraryUtils';
 
 const Bookings = () => {
-  const [priceRange, setPriceRange] = useState<number[]>([0, 800]);
-  const [ratingFilter, setRatingFilter] = useState<string>("any");
-  const [filteredItems, setFilteredItems] = useState<BookingItem[]>(bookings);
-  const [activeTab, setActiveTab] = useState<string>("all");
+  const [cartItems, setCartItems] = useState<BookingItem[]>([]);
+  const [bookings, setBookings] = useState<BookingItem[]>([]);
+  const [isLoadingCart, setIsLoadingCart] = useState(false);
+  const [isLoadingBookings, setIsLoadingBookings] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
-  const handlePriceRangeChange = (value: number[]) => {
-    setPriceRange(value);
-    filterItems(activeTab, value, ratingFilter);
-  };
-  
-  const handleRatingChange = (value: string) => {
-    setRatingFilter(value);
-    filterItems(activeTab, priceRange, value);
-  };
-  
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    filterItems(value, priceRange, ratingFilter);
-  };
-  
-  const filterItems = (tab: string, price: number[], rating: string) => {
-    let items = bookings;
-    
-    // Filter by category
-    if (tab !== "all") {
-      items = items.filter(item => item.category === tab);
+  const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      toast({
+        title: "Authentication required",
+        description: "Please log in to view your bookings",
+        variant: "destructive",
+      });
+    } else {
+      loadCartItems();
+      loadBookings();
     }
-    
-    // Filter by price
-    items = items.filter(item => item.price >= price[0] && item.price <= price[1]);
-    
-    // Filter by rating
-    if (rating !== "any") {
-      const minRating = parseFloat(rating);
-      items = items.filter(item => item.rating >= minRating);
-    }
-    
-    setFilteredItems(items);
-  };
-  
-  const renderBookingIcon = (category: string) => {
-    switch (category) {
-      case 'flight':
-        return <Plane className="h-5 w-5 text-teal" />;
-      case 'hotel':
-        return <Building2 className="h-5 w-5 text-teal" />;
-      case 'activity':
-        return <Compass className="h-5 w-5 text-teal" />;
-      default:
-        return null;
+  }, [isAuthenticated, navigate]);
+
+  const loadCartItems = async () => {
+    setIsLoadingCart(true);
+    try {
+      const items = await getCartItems();
+      setCartItems(items);
+    } catch (error) {
+      console.error('Error loading cart items:', error);
+      toast({
+        title: "Error loading cart",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingCart(false);
     }
   };
-  
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex items-center">
-        <Star className="h-4 w-4 fill-coral text-coral" />
-        <span className="ml-1 text-sm">{rating.toFixed(1)}</span>
-      </div>
-    );
+
+  const loadBookings = async () => {
+    setIsLoadingBookings(true);
+    try {
+      const items = await getBookings();
+      setBookings(items);
+    } catch (error) {
+      console.error('Error loading bookings:', error);
+      toast({
+        title: "Error loading bookings",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingBookings(false);
+    }
+  };
+
+  const handleConfirmBooking = async (id: string) => {
+    setIsProcessing(true);
+    try {
+      const success = await confirmBooking(id);
+      if (success) {
+        toast({
+          title: "Booking confirmed",
+          description: "Your booking has been confirmed successfully.",
+        });
+        await loadCartItems();
+        await loadBookings();
+      } else {
+        throw new Error("Failed to confirm booking");
+      }
+    } catch (error) {
+      console.error('Error confirming booking:', error);
+      toast({
+        title: "Error confirming booking",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRemoveFromCart = async (id: string) => {
+    setIsProcessing(true);
+    try {
+      const success = await removeFromCart(id);
+      if (success) {
+        toast({
+          title: "Item removed",
+          description: "Item has been removed from your cart.",
+        });
+        await loadCartItems();
+      } else {
+        throw new Error("Failed to remove item from cart");
+      }
+    } catch (error) {
+      console.error('Error removing item from cart:', error);
+      toast({
+        title: "Error removing item",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  const calculateTotal = (items: BookingItem[]) => {
+    return items.reduce((total, item) => total + item.price, 0);
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">Travel Bookings</h1>
-      <p className="text-muted-foreground mb-8">Find and book your next flights, hotels, and activities</p>
+      <h1 className="text-3xl font-bold mb-8">Your Bookings</h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Filters */}
-        <div className="lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Cart Section */}
+        <div>
           <Card>
             <CardHeader>
-              <CardTitle>Filters</CardTitle>
-              <CardDescription>Refine your search results</CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center">
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Your Cart
+                  </CardTitle>
+                  <CardDescription>
+                    Items waiting to be booked
+                  </CardDescription>
+                </div>
+                {cartItems.length > 0 && (
+                  <div className="text-right">
+                    <p className="text-sm font-medium">Total</p>
+                    <p className="text-xl font-bold">{formatRupees(calculateTotal(cartItems))}</p>
+                  </div>
+                )}
+              </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>Price Range (${priceRange[0]} - ${priceRange[1]})</Label>
-                <Slider
-                  defaultValue={[0, 800]}
-                  max={1000}
-                  step={10}
-                  value={priceRange}
-                  onValueChange={handlePriceRangeChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Minimum Rating</Label>
-                <RadioGroup value={ratingFilter} onValueChange={handleRatingChange}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="any" id="any" />
-                    <Label htmlFor="any">Any rating</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="3" id="three" />
-                    <Label htmlFor="three">3+ stars</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="4" id="four" />
-                    <Label htmlFor="four">4+ stars</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="4.5" id="fourHalf" />
-                    <Label htmlFor="fourHalf">4.5+ stars</Label>
-                  </div>
-                </RadioGroup>
-              </div>
+            <CardContent>
+              {isLoadingCart ? (
+                <div className="flex justify-center py-8">
+                  <p>Loading cart items...</p>
+                </div>
+              ) : cartItems.length > 0 ? (
+                <div className="space-y-4">
+                  {cartItems.map(item => (
+                    <div key={item.id} className="p-4 border rounded-lg flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">{item.itemName}</h3>
+                        <p className="text-sm text-muted-foreground flex items-center">
+                          <Calendar className="mr-1 h-3 w-3" />
+                          {formatDate(item.startDate)}
+                          {item.endDate && ` - ${formatDate(item.endDate)}`}
+                        </p>
+                        <p className="text-sm font-medium mt-2">{formatRupees(item.price)}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-destructive"
+                          onClick={() => handleRemoveFromCart(item.id)}
+                          disabled={isProcessing}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="default"
+                          onClick={() => handleConfirmBooking(item.id)}
+                          disabled={isProcessing}
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Book
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 border border-dashed rounded-lg">
+                  <ShoppingCart className="mx-auto h-8 w-8 text-muted-foreground" />
+                  <h3 className="mt-4 text-lg font-medium">Your cart is empty</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Add activities from itineraries to your cart to book them.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => navigate('/planner')}
+                  >
+                    Browse Itineraries
+                  </Button>
+                </div>
+              )}
             </CardContent>
+            {cartItems.length > 0 && (
+              <CardFooter className="flex justify-end">
+                <Button 
+                  className="bg-teal hover:bg-teal/90"
+                  onClick={() => {
+                    // Book all items in cart
+                    toast({
+                      title: "Booking all items",
+                      description: "This would process payment for all items in a real app.",
+                    });
+                    
+                    // In a real app, we would process payment here
+                    // For demo, we'll just confirm all bookings
+                    const bookAll = async () => {
+                      setIsProcessing(true);
+                      try {
+                        for (const item of cartItems) {
+                          await confirmBooking(item.id);
+                        }
+                        toast({
+                          title: "All items booked",
+                          description: "All items have been booked successfully.",
+                        });
+                        await loadCartItems();
+                        await loadBookings();
+                      } catch (error) {
+                        console.error('Error booking all items:', error);
+                        toast({
+                          title: "Error booking items",
+                          description: "Some items could not be booked. Please try again.",
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setIsProcessing(false);
+                      }
+                    };
+                    
+                    bookAll();
+                  }}
+                  disabled={isProcessing}
+                >
+                  Book All ({cartItems.length})
+                </Button>
+              </CardFooter>
+            )}
           </Card>
         </div>
         
-        {/* Results */}
-        <div className="lg:col-span-3">
-          <Tabs defaultValue="all" onValueChange={handleTabChange}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="flight">Flights</TabsTrigger>
-              <TabsTrigger value="hotel">Hotels</TabsTrigger>
-              <TabsTrigger value="activity">Activities</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="all" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredItems.map((item) => (
-                  <Card key={item.id} className="overflow-hidden">
-                    <div className="relative h-48">
-                      <img 
-                        src={item.image} 
-                        alt={item.title} 
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-3 left-3 bg-white/90 rounded-full p-2">
-                        {renderBookingIcon(item.category)}
-                      </div>
-                    </div>
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{item.title}</CardTitle>
-                        {renderStars(item.rating)}
-                      </div>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        {item.duration && (
-                          <span className="flex items-center mr-3">
-                            <Clock className="mr-1 h-3 w-3" />
-                            {item.duration}
-                          </span>
-                        )}
-                        <span>{item.location}</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 flex justify-between items-center">
-                      <div className="font-bold text-lg">
-                        ${item.price}
-                        <span className="text-xs text-muted-foreground font-normal">
-                          {item.category === 'hotel' ? '/night' : ''}
+        {/* Bookings Section */}
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Package className="mr-2 h-5 w-5" />
+                Your Bookings
+              </CardTitle>
+              <CardDescription>
+                Items you have booked for your trips
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingBookings ? (
+                <div className="flex justify-center py-8">
+                  <p>Loading bookings...</p>
+                </div>
+              ) : bookings.length > 0 ? (
+                <div className="space-y-4">
+                  {bookings.map(booking => (
+                    <div key={booking.id} className="p-4 border rounded-lg">
+                      <h3 className="font-medium">{booking.itemName}</h3>
+                      <p className="text-sm text-muted-foreground flex items-center">
+                        <Calendar className="mr-1 h-3 w-3" />
+                        {formatDate(booking.startDate)}
+                        {booking.endDate && ` - ${formatDate(booking.endDate)}`}
+                      </p>
+                      <div className="flex justify-between items-center mt-2">
+                        <p className="text-sm font-medium">{formatRupees(booking.price)}</p>
+                        <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                          Confirmed
                         </span>
                       </div>
-                      <Button>Book Now</Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-              
-              {filteredItems.length === 0 && (
-                <div className="bg-muted/30 rounded-lg border border-dashed p-8 text-center">
-                  <h3 className="font-medium mb-2">No results found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Try adjusting your filters to find what you're looking for.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="flight" className="mt-0">
-              {/* Flight-specific content would go here if needed */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredItems.map((item) => (
-                  <Card key={item.id} className="overflow-hidden">
-                    <div className="relative h-48">
-                      <img 
-                        src={item.image} 
-                        alt={item.title} 
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-3 left-3 bg-white/90 rounded-full p-2">
-                        {renderBookingIcon(item.category)}
-                      </div>
                     </div>
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{item.title}</CardTitle>
-                        {renderStars(item.rating)}
-                      </div>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        {item.duration && (
-                          <span className="flex items-center mr-3">
-                            <Clock className="mr-1 h-3 w-3" />
-                            {item.duration}
-                          </span>
-                        )}
-                        <span>{item.location}</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 flex justify-between items-center">
-                      <div className="font-bold text-lg">
-                        ${item.price}
-                      </div>
-                      <Button>Book Now</Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-              
-              {filteredItems.length === 0 && (
-                <div className="bg-muted/30 rounded-lg border border-dashed p-8 text-center">
-                  <h3 className="font-medium mb-2">No flights found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Try adjusting your filters to find what you're looking for.
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 border border-dashed rounded-lg">
+                  <Package className="mx-auto h-8 w-8 text-muted-foreground" />
+                  <h3 className="mt-4 text-lg font-medium">No bookings yet</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Your confirmed bookings will appear here.
                   </p>
                 </div>
               )}
-            </TabsContent>
-            
-            <TabsContent value="hotel" className="mt-0">
-              {/* Hotel-specific content would go here if needed */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredItems.map((item) => (
-                  <Card key={item.id} className="overflow-hidden">
-                    <div className="relative h-48">
-                      <img 
-                        src={item.image} 
-                        alt={item.title} 
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-3 left-3 bg-white/90 rounded-full p-2">
-                        {renderBookingIcon(item.category)}
-                      </div>
-                    </div>
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{item.title}</CardTitle>
-                        {renderStars(item.rating)}
-                      </div>
-                      <CardDescription>{item.location}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 flex justify-between items-center">
-                      <div className="font-bold text-lg">
-                        ${item.price}
-                        <span className="text-xs text-muted-foreground font-normal">/night</span>
-                      </div>
-                      <Button>Book Now</Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-              
-              {filteredItems.length === 0 && (
-                <div className="bg-muted/30 rounded-lg border border-dashed p-8 text-center">
-                  <h3 className="font-medium mb-2">No hotels found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Try adjusting your filters to find what you're looking for.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="activity" className="mt-0">
-              {/* Activity-specific content would go here if needed */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredItems.map((item) => (
-                  <Card key={item.id} className="overflow-hidden">
-                    <div className="relative h-48">
-                      <img 
-                        src={item.image} 
-                        alt={item.title} 
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-3 left-3 bg-white/90 rounded-full p-2">
-                        {renderBookingIcon(item.category)}
-                      </div>
-                    </div>
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{item.title}</CardTitle>
-                        {renderStars(item.rating)}
-                      </div>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        {item.duration && (
-                          <span className="flex items-center mr-3">
-                            <Clock className="mr-1 h-3 w-3" />
-                            {item.duration}
-                          </span>
-                        )}
-                        <span>{item.location}</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 flex justify-between items-center">
-                      <div className="font-bold text-lg">
-                        ${item.price}
-                      </div>
-                      <Button>Book Now</Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-              
-              {filteredItems.length === 0 && (
-                <div className="bg-muted/30 rounded-lg border border-dashed p-8 text-center">
-                  <h3 className="font-medium mb-2">No activities found</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Try adjusting your filters to find what you're looking for.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

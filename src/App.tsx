@@ -14,6 +14,7 @@ import Planner from './pages/Planner';
 import Explore from './pages/Explore';
 import Bookings from './pages/Bookings';
 import Profile from './pages/Profile';
+import Chatbot from './pages/Chatbot';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -32,12 +33,17 @@ const App = () => (
               <Route path="/register" element={<Register />} />
               <Route path="/planner" element={<Planner />} />
               <Route path="/explore" element={<Explore />} />
-              <Route path="/bookings" element={<Bookings />} />
+              <Route path="/bookings" element={
+                <ProtectedRoute>
+                  <Bookings />
+                </ProtectedRoute>
+              } />
               <Route path="/profile" element={
                 <ProtectedRoute>
                   <Profile />
                 </ProtectedRoute>
               } />
+              <Route path="/chatbot" element={<Chatbot />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

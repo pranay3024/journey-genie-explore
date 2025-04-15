@@ -9,7 +9,116 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          cost: number
+          day: number
+          description: string | null
+          id: string
+          itinerary_id: string
+          time: string
+          title: string
+        }
+        Insert: {
+          cost: number
+          day: number
+          description?: string | null
+          id?: string
+          itinerary_id: string
+          time: string
+          title: string
+        }
+        Update: {
+          cost?: number
+          day?: number
+          description?: string | null
+          id?: string
+          itinerary_id?: string
+          time?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_itinerary_id_fkey"
+            columns: ["itinerary_id"]
+            isOneToOne: false
+            referencedRelation: "itineraries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          item_name: string
+          item_type: string
+          price: number
+          start_date: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          item_name: string
+          item_type: string
+          price: number
+          start_date: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          item_name?: string
+          item_type?: string
+          price?: number
+          start_date?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      itineraries: {
+        Row: {
+          budget: number
+          created_at: string
+          destination: string
+          end_date: string
+          group_size: number
+          id: string
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget: number
+          created_at?: string
+          destination: string
+          end_date: string
+          group_size: number
+          id?: string
+          start_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number
+          created_at?: string
+          destination?: string
+          end_date?: string
+          group_size?: number
+          id?: string
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

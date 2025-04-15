@@ -7,8 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Itinerary, generateItinerary, saveItinerary, getItineraries, deleteItinerary, ItineraryActivity } from '@/utils/itineraryUtils';
-import { MapPin, Calendar, Users, DollarSign, Edit, Trash2 } from 'lucide-react';
+import { 
+  Itinerary, ItineraryActivity, 
+  generateItinerary, saveItinerary, getItineraries, 
+  getItineraryById, deleteItinerary, 
+  formatRupees, addToCart
+} from '@/utils/itineraryUtils';
+import { MapPin, Calendar, Users, DollarSign, Edit, Trash2, ShoppingCart } from 'lucide-react';
 
 const Planner = () => {
   const [destination, setDestination] = useState('');
@@ -19,6 +24,7 @@ const Planner = () => {
   const [itineraries, setItineraries] = useState<Itinerary[]>([]);
   const [generatedItinerary, setGeneratedItinerary] = useState<Itinerary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -30,14 +36,26 @@ const Planner = () => {
     }
   }, [isAuthenticated, user]);
 
-  const loadItineraries = () => {
+  const loadItineraries = async () => {
     if (user) {
-      const userItineraries = getItineraries(user.id);
-      setItineraries(userItineraries);
+      setIsLoading(true);
+      try {
+        const userItineraries = await getItineraries(user.id);
+        setItineraries(userItineraries);
+      } catch (error) {
+        console.error('Error loading itineraries:', error);
+        toast({
+          title: "Error loading itineraries",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -93,29 +111,45 @@ const Planner = () => {
     }
   };
 
-  const handleSaveItinerary = () => {
+  const handleSaveItinerary = async () => {
     if (generatedItinerary) {
-      saveItinerary(generatedItinerary);
-      setGeneratedItinerary(null);
-      
-      // Reset form
-      setDestination('');
-      setStartDate('');
-      setEndDate('');
-      setBudget('');
-      setGroupSize('1');
-      
-      // Reload itineraries
-      loadItineraries();
-      
-      toast({
-        title: "Itinerary saved",
-        description: "Your itinerary has been saved successfully.",
-      });
+      setIsSaving(true);
+      try {
+        const savedItinerary = await saveItinerary(generatedItinerary);
+        if (savedItinerary) {
+          setGeneratedItinerary(null);
+          
+          // Reset form
+          setDestination('');
+          setStartDate('');
+          setEndDate('');
+          setBudget('');
+          setGroupSize('1');
+          
+          // Reload itineraries
+          await loadItineraries();
+          
+          toast({
+            title: "Itinerary saved",
+            description: "Your itinerary has been saved successfully.",
+          });
+        } else {
+          throw new Error("Failed to save itinerary");
+        }
+      } catch (error) {
+        console.error("Error saving itinerary:", error);
+        toast({
+          title: "Error",
+          description: "Failed to save itinerary. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
-  const handleEditItinerary = (itinerary: Itinerary) => {
+  const handleEditItinerary = async (itinerary: Itinerary) => {
     setDestination(itinerary.destination);
     setStartDate(itinerary.startDate);
     setEndDate(itinerary.endDate);
@@ -129,14 +163,66 @@ const Planner = () => {
     });
   };
 
-  const handleDeleteItinerary = (id: string) => {
-    deleteItinerary(id);
-    loadItineraries();
+  const handleDeleteItinerary = async (id: string) => {
+    setIsLoading(true);
+    try {
+      const success = await deleteItinerary(id);
+      if (success) {
+        await loadItineraries();
+        toast({
+          title: "Itinerary deleted",
+          description: "Your itinerary has been deleted successfully.",
+        });
+      } else {
+        throw new Error("Failed to delete itinerary");
+      }
+    } catch (error) {
+      console.error("Error deleting itinerary:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete itinerary. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddToCart = async (activity: ItineraryActivity, itinerary: Itinerary) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to add items to cart",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
     
-    toast({
-      title: "Itinerary deleted",
-      description: "Your itinerary has been deleted successfully.",
-    });
+    try {
+      const cartItem = await addToCart({
+        itemType: 'activity',
+        itemName: `${activity.title} in ${itinerary.destination}`,
+        startDate: new Date(itinerary.startDate).toISOString(),
+        price: activity.cost
+      });
+      
+      if (cartItem) {
+        toast({
+          title: "Added to cart",
+          description: `${activity.title} has been added to your cart.`,
+        });
+      } else {
+        throw new Error("Failed to add to cart");
+      }
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add to cart. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -208,7 +294,7 @@ const Planner = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="budget">Budget (USD)</Label>
+                  <Label htmlFor="budget">Budget (INR)</Label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -256,7 +342,7 @@ const Planner = () => {
                 <CardDescription>
                   {formatDate(generatedItinerary.startDate)} - {formatDate(generatedItinerary.endDate)} 
                   • {generatedItinerary.groupSize} traveler{generatedItinerary.groupSize > 1 ? 's' : ''} 
-                  • Budget: ${generatedItinerary.budget}
+                  • Budget: {formatRupees(generatedItinerary.budget)}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -290,8 +376,17 @@ const Planner = () => {
                                   <h4 className="font-medium">{activity.title}</h4>
                                   <p className="text-sm text-muted-foreground">{activity.description}</p>
                                 </div>
-                                <div className="text-right">
-                                  <span className="text-sm font-medium">${activity.cost}</span>
+                                <div className="text-right flex flex-col items-end gap-2">
+                                  <span className="text-sm font-medium">{formatRupees(activity.cost)}</span>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    className="text-xs px-2 py-1 h-auto"
+                                    onClick={() => handleAddToCart(activity, generatedItinerary)}
+                                  >
+                                    <ShoppingCart className="h-3 w-3 mr-1" />
+                                    Add to Cart
+                                  </Button>
                                 </div>
                               </div>
                             </li>
@@ -303,8 +398,12 @@ const Planner = () => {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button onClick={handleSaveItinerary} className="w-full bg-teal hover:bg-teal/90">
-                  Save Itinerary
+                <Button 
+                  onClick={handleSaveItinerary} 
+                  className="w-full bg-teal hover:bg-teal/90"
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Saving...' : 'Save Itinerary'}
                 </Button>
               </CardFooter>
             </Card>
@@ -320,7 +419,7 @@ const Planner = () => {
                         <CardDescription>
                           {formatDate(itinerary.startDate)} - {formatDate(itinerary.endDate)} • 
                           {itinerary.groupSize} traveler{itinerary.groupSize > 1 ? 's' : ''} •
-                          Budget: ${itinerary.budget}
+                          Budget: {formatRupees(itinerary.budget)}
                         </CardDescription>
                       </div>
                       <div className="flex space-x-2">
@@ -345,8 +444,22 @@ const Planner = () => {
                       <div className="grid grid-cols-3 gap-2">
                         {itinerary.activities.slice(0, 3).map((activity) => (
                           <div key={activity.id} className="p-3 rounded-md bg-muted/50 text-sm">
-                            <p className="font-medium truncate">{activity.title}</p>
-                            <p className="text-xs text-muted-foreground">Day {activity.day}</p>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium truncate">{activity.title}</p>
+                                <p className="text-xs text-muted-foreground">Day {activity.day}</p>
+                              </div>
+                              <p className="text-xs font-medium">{formatRupees(activity.cost)}</p>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="text-xs px-2 py-1 h-auto mt-2 w-full"
+                              onClick={() => handleAddToCart(activity, itinerary)}
+                            >
+                              <ShoppingCart className="h-3 w-3 mr-1" />
+                              Add to Cart
+                            </Button>
                           </div>
                         ))}
                       </div>

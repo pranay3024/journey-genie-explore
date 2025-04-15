@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogIn, UserCircle } from 'lucide-react';
+import { Menu, X, LogIn, UserCircle, MessageCircle, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -22,6 +22,7 @@ const Navbar = () => {
     { name: 'Plan', path: '/planner' },
     { name: 'Explore', path: '/explore' },
     { name: 'Bookings', path: '/bookings' },
+    { name: 'Travel Assistant', path: '/chatbot', icon: <MessageCircle className="h-4 w-4 mr-1" /> },
   ];
 
   const toggleMobileMenu = () => {
@@ -51,12 +52,13 @@ const Navbar = () => {
                 <Link
                   key={link.name}
                   to={link.path}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center ${
                     location.pathname === link.path
                       ? 'text-coral bg-muted'
                       : 'text-foreground hover:text-coral'
                   }`}
                 >
+                  {link.icon && link.icon}
                   {link.name}
                 </Link>
               ))}
@@ -64,27 +66,39 @@ const Navbar = () => {
 
             <div className="ml-4 flex items-center">
               {isAuthenticated ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative rounded-full">
-                      <UserCircle className="h-8 w-8 text-teal" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="p-2">
-                      <p className="font-medium">{user?.name}</p>
-                      <p className="text-sm text-muted-foreground">{user?.email}</p>
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" onClick={closeMobileMenu}>Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout}>
-                      Log out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <>
+                  <Link 
+                    to="/bookings" 
+                    className="mr-2 p-2 rounded-full hover:bg-muted relative"
+                    aria-label="Cart"
+                  >
+                    <ShoppingCart className="h-5 w-5 text-foreground" />
+                  </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="relative rounded-full">
+                        <UserCircle className="h-8 w-8 text-teal" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <div className="p-2">
+                        <p className="font-medium">{user?.name}</p>
+                        <p className="text-sm text-muted-foreground">{user?.email}</p>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/profile" onClick={closeMobileMenu}>Profile</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/bookings" onClick={closeMobileMenu}>Bookings</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={logout}>
+                        Log out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
               ) : (
                 <Button variant="default" asChild>
                   <Link to="/login" className="flex items-center">
@@ -126,13 +140,14 @@ const Navbar = () => {
             <Link
               key={link.name}
               to={link.path}
-              className={`block px-3 py-2 rounded-md text-base font-medium ${
+              className={`flex items-center px-3 py-2 rounded-md text-base font-medium ${
                 location.pathname === link.path
                   ? 'text-coral bg-muted'
                   : 'text-foreground hover:text-coral'
               }`}
               onClick={closeMobileMenu}
             >
+              {link.icon && link.icon}
               {link.name}
             </Link>
           ))}
@@ -141,9 +156,10 @@ const Navbar = () => {
             <>
               <Link
                 to="/profile"
-                className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:text-coral"
+                className="flex items-center px-3 py-2 rounded-md text-base font-medium text-foreground hover:text-coral"
                 onClick={closeMobileMenu}
               >
+                <UserCircle className="h-4 w-4 mr-1" />
                 Profile
               </Link>
               <button
@@ -151,7 +167,7 @@ const Navbar = () => {
                   logout();
                   closeMobileMenu();
                 }}
-                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-foreground hover:text-coral"
+                className="flex items-center w-full text-left px-3 py-2 rounded-md text-base font-medium text-foreground hover:text-coral"
               >
                 Log out
               </button>
@@ -159,9 +175,10 @@ const Navbar = () => {
           ) : (
             <Link
               to="/login"
-              className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:text-coral"
+              className="flex items-center px-3 py-2 rounded-md text-base font-medium text-foreground hover:text-coral"
               onClick={closeMobileMenu}
             >
+              <LogIn className="h-4 w-4 mr-1" />
               Log in
             </Link>
           )}
