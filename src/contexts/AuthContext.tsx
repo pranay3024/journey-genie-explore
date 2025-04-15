@@ -3,8 +3,13 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 
+// Extend User type to include metadata
+interface AppUser extends User {
+  name?: string;
+}
+
 type AuthContextType = {
-  user: User | null;
+  user: AppUser | null;
   session: Session | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
@@ -24,7 +29,7 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,14 +42,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
         console.log('Auth state changed:', event);
         setSession(newSession);
-        setUser(newSession?.user ?? null);
+        
+        if (newSession?.user) {
+          // Extract name from user metadata
+          const userData = newSession.user as AppUser;
+          // Check if user metadata has a name field
+          if (newSession.user.user_metadata && newSession.user.user_metadata.name) {
+            userData.name = newSession.user.user_metadata.name;
+          }
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+        
         setIsAuthenticated(!!newSession?.user);
       });
       
       // Get initial session
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
-      setUser(data.session?.user ?? null);
+      
+      if (data.session?.user) {
+        // Extract name from user metadata
+        const userData = data.session.user as AppUser;
+        // Check if user metadata has a name field
+        if (data.session.user.user_metadata && data.session.user.user_metadata.name) {
+          userData.name = data.session.user.user_metadata.name;
+        }
+        setUser(userData);
+      } else {
+        setUser(null);
+      }
+      
       setIsAuthenticated(!!data.session?.user);
       
       setIsLoading(false);

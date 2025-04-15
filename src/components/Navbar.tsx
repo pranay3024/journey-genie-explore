@@ -82,7 +82,7 @@ const Navbar = () => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <div className="p-2">
-                        <p className="font-medium">{user?.name}</p>
+                        <p className="font-medium">{user?.name || 'User'}</p>
                         <p className="text-sm text-muted-foreground">{user?.email}</p>
                       </div>
                       <DropdownMenuSeparator />

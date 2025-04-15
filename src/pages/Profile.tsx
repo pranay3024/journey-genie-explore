@@ -31,12 +31,16 @@ const Profile = () => {
     }
 
     if (user) {
-      setName(user.name);
-      setEmail(user.email);
+      setName(user.name || '');
+      setEmail(user.email || '');
       
       // Load user's itineraries
-      const userItineraries = getItineraries(user.id);
-      setItineraries(userItineraries);
+      const fetchItineraries = async () => {
+        const userItineraries = await getItineraries(user.id);
+        setItineraries(userItineraries);
+      };
+      
+      fetchItineraries();
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -94,7 +98,7 @@ const Profile = () => {
             <UserCircle className="w-16 h-16 text-muted-foreground" />
           </div>
           <div className="text-center md:text-left">
-            <h1 className="text-3xl font-bold">{user?.name}</h1>
+            <h1 className="text-3xl font-bold">{user?.name || 'User'}</h1>
             <p className="text-muted-foreground">{user?.email}</p>
             <div className="mt-4">
               <Button variant="outline" className="mr-2" onClick={() => navigate('/planner')}>

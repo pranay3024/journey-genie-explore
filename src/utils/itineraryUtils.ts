@@ -391,7 +391,7 @@ export const addToCart = async (item: Omit<BookingItem, 'id' | 'userId' | 'creat
       startDate: data.start_date,
       endDate: data.end_date,
       price: data.price,
-      status: data.status,
+      status: data.status as 'cart' | 'booked' | 'cancelled',
       createdAt: data.created_at
     } : null;
   } catch (error) {
@@ -421,7 +421,7 @@ export const getCartItems = async (): Promise<BookingItem[]> => {
       startDate: item.start_date,
       endDate: item.end_date,
       price: item.price,
-      status: item.status,
+      status: item.status as 'cart' | 'booked' | 'cancelled',
       createdAt: item.created_at
     })) : [];
   } catch (error) {
@@ -482,7 +482,7 @@ export const getBookings = async (): Promise<BookingItem[]> => {
       startDate: item.start_date,
       endDate: item.end_date,
       price: item.price,
-      status: item.status,
+      status: item.status as 'cart' | 'booked' | 'cancelled',
       createdAt: item.created_at
     })) : [];
   } catch (error) {
