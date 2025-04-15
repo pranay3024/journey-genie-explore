@@ -9,12 +9,14 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Itinerary, getItineraries } from '@/utils/itineraryUtils';
+import { updateUserProfile, getUserLocation } from '@/utils/profileUtils';
 import { UserCircle, MapPin, Calendar } from 'lucide-react';
 
 const Profile = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [location, setLocation] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -33,6 +35,7 @@ const Profile = () => {
     if (user) {
       setName(user.name || '');
       setEmail(user.email || '');
+      setLocation(getUserLocation());
       
       // Load user's itineraries
       const fetchItineraries = async () => {
@@ -44,18 +47,31 @@ const Profile = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
-  const handleProfileUpdate = (e: React.FormEvent) => {
+  const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+    if (user) {
+      const success = await updateUserProfile(user.id, {
+        name,
+        email
       });
-    }, 1000);
+      
+      if (success) {
+        toast({
+          title: "Profile updated",
+          description: "Your profile has been updated successfully.",
+        });
+      } else {
+        toast({
+          title: "Update failed",
+          description: "Failed to update your profile. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+    
+    setIsLoading(false);
   };
 
   const handlePasswordUpdate = (e: React.FormEvent) => {
@@ -100,6 +116,9 @@ const Profile = () => {
           <div className="text-center md:text-left">
             <h1 className="text-3xl font-bold">{user?.name || 'User'}</h1>
             <p className="text-muted-foreground">{user?.email}</p>
+            <p className="text-muted-foreground flex items-center mt-1">
+              <MapPin className="w-4 h-4 mr-1" /> {location}
+            </p>
             <div className="mt-4">
               <Button variant="outline" className="mr-2" onClick={() => navigate('/planner')}>
                 Plan a Trip
@@ -136,7 +155,7 @@ const Profile = () => {
                       <CardContent>
                         <div className="mb-2">
                           <p className="text-sm">
-                            <span className="font-medium">Budget:</span> ${itinerary.budget}
+                            <span className="font-medium">Budget:</span> ₹{itinerary.budget}
                           </p>
                           <p className="text-sm">
                             <span className="font-medium">Travelers:</span> {itinerary.groupSize}
@@ -196,6 +215,16 @@ const Profile = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={location}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground">Your location is set to Chembur, Mumbai</p>
                   </div>
                   <Button type="submit" disabled={isLoading}>
                     {isLoading ? 'Saving...' : 'Save Changes'}
