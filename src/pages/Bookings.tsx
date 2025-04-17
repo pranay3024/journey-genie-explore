@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import {
   BookingItem, getCartItems, getBookings, 
   confirmBooking, removeFromCart, formatRupees 
 } from '@/utils/itineraryUtils';
+import { QRCodeButton } from '@/components/QRCodeButton';
 
 const Bookings = () => {
   const [cartItems, setCartItems] = useState<BookingItem[]>([]);
@@ -22,7 +22,6 @@ const Bookings = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
@@ -136,7 +135,6 @@ const Bookings = () => {
       <h1 className="text-3xl font-bold mb-8">Your Bookings</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Cart Section */}
         <div>
           <Card>
             <CardHeader>
@@ -175,6 +173,7 @@ const Bookings = () => {
                           {item.endDate && ` - ${formatDate(item.endDate)}`}
                         </p>
                         <p className="text-sm font-medium mt-2">{formatRupees(item.price)}</p>
+                        <QRCodeButton bookingData={item} />
                       </div>
                       <div className="flex gap-2">
                         <Button 
@@ -221,14 +220,11 @@ const Bookings = () => {
                 <Button 
                   className="bg-teal hover:bg-teal/90"
                   onClick={() => {
-                    // Book all items in cart
                     toast({
                       title: "Booking all items",
                       description: "This would process payment for all items in a real app.",
                     });
                     
-                    // In a real app, we would process payment here
-                    // For demo, we'll just confirm all bookings
                     const bookAll = async () => {
                       setIsProcessing(true);
                       try {
@@ -264,7 +260,6 @@ const Bookings = () => {
           </Card>
         </div>
         
-        {/* Bookings Section */}
         <div>
           <Card>
             <CardHeader>

@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import AdminLogin from './pages/AdminLogin';
 import Planner from './pages/Planner';
 import Explore from './pages/Explore';
 import Bookings from './pages/Bookings';
@@ -31,6 +32,7 @@ const App = () => (
             <Route element={<Layout />}>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/register" element={<Register />} />
               <Route path="/planner" element={<Planner />} />
               <Route path="/explore" element={<Explore />} />

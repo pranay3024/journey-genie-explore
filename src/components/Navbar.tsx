@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, LogIn, UserCircle, MessageCircle, ShoppingCart } from 'lucide-react';
@@ -100,12 +99,17 @@ const Navbar = () => {
                   </DropdownMenu>
                 </>
               ) : (
-                <Button variant="default" asChild>
-                  <Link to="/login" className="flex items-center">
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Log in
-                  </Link>
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="default" asChild>
+                    <Link to="/login" className="flex items-center">
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Log in
+                    </Link>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link to="/admin-login">Admin</Link>
+                  </Button>
+                </div>
               )}
             </div>
           </div>
