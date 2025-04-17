@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface QRCodeButtonProps {
   bookingData: {
@@ -34,7 +34,7 @@ export const QRCodeButton = ({ bookingData }: QRCodeButtonProps) => {
           <DialogTitle>Booking QR Code</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center justify-center p-4">
-          <QRCode value={qrData} size={256} />
+          <QRCodeSVG value={qrData} size={256} />
           <p className="mt-4 text-sm text-muted-foreground">
             Scan this QR code to verify the booking
           </p>
