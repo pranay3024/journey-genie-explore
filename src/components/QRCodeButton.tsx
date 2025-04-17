@@ -7,7 +7,7 @@ import { QRCodeSVG } from 'qrcode.react';
 interface QRCodeButtonProps {
   bookingData: {
     id: string;
-    item_name: string;
+    itemName: string;
     status: string;
     [key: string]: any;
   };
@@ -18,7 +18,7 @@ export const QRCodeButton = ({ bookingData }: QRCodeButtonProps) => {
 
   const qrData = JSON.stringify({
     id: bookingData.id,
-    item: bookingData.item_name,
+    item: bookingData.itemName,
     status: bookingData.status,
   });
 
