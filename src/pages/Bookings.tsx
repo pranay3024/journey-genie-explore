@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Trash2, Check, ShoppingCart, Package } from 'lucide-react';
+import { Calendar, Trash2, Check, ShoppingCart, Package, QrCode } from 'lucide-react';
 import { 
   BookingItem, getCartItems, getBookings, 
   confirmBooking, removeFromCart, formatRupees 
@@ -173,7 +173,12 @@ const Bookings = () => {
                           {item.endDate && ` - ${formatDate(item.endDate)}`}
                         </p>
                         <p className="text-sm font-medium mt-2">{formatRupees(item.price)}</p>
-                        <QRCodeButton bookingData={item} />
+                        <div className="flex gap-2 mt-2">
+                          <QRCodeButton 
+                            bookingData={item} 
+                            showBeforeBooking={true} 
+                          />
+                        </div>
                       </div>
                       <div className="flex gap-2">
                         <Button 
@@ -291,6 +296,9 @@ const Bookings = () => {
                         <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">
                           Confirmed
                         </span>
+                      </div>
+                      <div className="mt-2">
+                        <QRCodeButton bookingData={booking} />
                       </div>
                     </div>
                   ))}
