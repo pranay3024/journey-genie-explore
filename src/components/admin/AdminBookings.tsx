@@ -14,7 +14,12 @@ export const AdminBookings = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      
+      // Transform the data to match the expected format
+      return data.map(booking => ({
+        ...booking,
+        itemName: booking.item_name, // Map snake_case to camelCase
+      }));
     },
   });
 
@@ -35,7 +40,7 @@ export const AdminBookings = () => {
         <TableBody>
           {bookings?.map((booking) => (
             <TableRow key={booking.id}>
-              <TableCell>{booking.item_name}</TableCell>
+              <TableCell>{booking.itemName}</TableCell>
               <TableCell>{booking.item_type}</TableCell>
               <TableCell>₹{booking.price}</TableCell>
               <TableCell>{booking.status}</TableCell>
