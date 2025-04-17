@@ -15,6 +15,7 @@ import Explore from './pages/Explore';
 import Bookings from './pages/Bookings';
 import Profile from './pages/Profile';
 import Chatbot from './pages/Chatbot';
+import Admin from './pages/Admin';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -46,6 +47,11 @@ const App = () => (
               <Route path="/chatbot" element={
                 <ProtectedRoute>
                   <Chatbot />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <Admin />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
